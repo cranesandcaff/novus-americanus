@@ -1,0 +1,8 @@
+essay = { }
+
+[research]
+currentQuery = "Find articles about the cost of hunger on gdp, the cost of means testing, find datasets on these things in the us, include snap and wic and other countries successful system "
+articlesFound = 3
+articlesArchived = 3
+articlesFailed = 0
+lastUpdated = "2025-11-09T19:14:53.105Z"
