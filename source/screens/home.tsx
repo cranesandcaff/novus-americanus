@@ -96,31 +96,33 @@ export function HomeScreen({onOpenEssay, onNewEssay}: HomeScreenProps) {
 
 	return (
 		<Box flexDirection="column" padding={1}>
-			<Box borderStyle="round" borderColor="cyan" flexDirection="column">
+			<Box borderStyle="round" borderColor="blue" flexDirection="column">
 				<Box paddingX={2} paddingTop={1}>
-					<Text bold color="cyan">
+					<Text bold color="blue">
 						Novus Americanus
 					</Text>
 				</Box>
 
 				<Box paddingX={2} paddingY={1} flexDirection="column">
-					<Text bold>Essays</Text>
+					<Text bold color="white">
+						Essays
+					</Text>
 
 					{isLoading && (
 						<Box paddingTop={1}>
-							<Text color="gray">Loading essays...</Text>
+							<Text color="yellowBright">Loading essays...</Text>
 						</Box>
 					)}
 
 					{error && (
 						<Box paddingTop={1}>
-							<Text color="red">Error: {error}</Text>
+							<Text color="redBright">Error: {error}</Text>
 						</Box>
 					)}
 
 					{!isLoading && !error && essayList.length === 0 && (
 						<Box paddingTop={1}>
-							<Text color="gray">
+							<Text color="white">
 								No essays yet. Press N to create your first essay.
 							</Text>
 						</Box>
@@ -130,17 +132,17 @@ export function HomeScreen({onOpenEssay, onNewEssay}: HomeScreenProps) {
 						<Box flexDirection="column" paddingTop={1}>
 							<Box>
 								<Box width={28}>
-									<Text bold dimColor>
+									<Text bold color="white">
 										Title
 									</Text>
 								</Box>
 								<Box width={15}>
-									<Text bold dimColor>
+									<Text bold color="white">
 										Status
 									</Text>
 								</Box>
 								<Box width={12}>
-									<Text bold dimColor>
+									<Text bold color="white">
 										Updated
 									</Text>
 								</Box>
@@ -151,7 +153,7 @@ export function HomeScreen({onOpenEssay, onNewEssay}: HomeScreenProps) {
 									<Box key={essay.id}>
 										<Box width={28}>
 											<Text
-												color={index === selectedIndex ? 'cyan' : undefined}
+												color={index === selectedIndex ? 'blue' : 'white'}
 												bold={index === selectedIndex}
 											>
 												{index === selectedIndex ? '› ' : '  '}
@@ -160,7 +162,7 @@ export function HomeScreen({onOpenEssay, onNewEssay}: HomeScreenProps) {
 										</Box>
 										<Box width={15}>
 											<Text
-												color={index === selectedIndex ? 'cyan' : 'gray'}
+												color={index === selectedIndex ? 'blue' : 'white'}
 												bold={index === selectedIndex}
 											>
 												{essay.status}
@@ -168,7 +170,7 @@ export function HomeScreen({onOpenEssay, onNewEssay}: HomeScreenProps) {
 										</Box>
 										<Box width={12}>
 											<Text
-												color={index === selectedIndex ? 'cyan' : 'gray'}
+												color={index === selectedIndex ? 'blue' : 'white'}
 												bold={index === selectedIndex}
 											>
 												{formatRelativeTime(essay.updated_at)}
@@ -181,8 +183,8 @@ export function HomeScreen({onOpenEssay, onNewEssay}: HomeScreenProps) {
 					)}
 				</Box>
 
-				<Box paddingX={2} paddingBottom={1} borderTop borderColor="gray">
-					<Text dimColor>
+				<Box paddingX={2} paddingBottom={1} borderTop borderColor="white">
+					<Text color="white">
 						[N] New Essay [Enter] Open {essayList.length > 0 ? '' : ''}[Q] Quit
 					</Text>
 				</Box>

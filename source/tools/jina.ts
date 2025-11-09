@@ -25,6 +25,26 @@ export async function extractArticle(url: string): Promise<Article> {
 
 		const markdown = await response.text();
 
+		if (markdown.includes('Warning: Target URL returned error')) {
+			const errorMatch = markdown.match(
+				/Warning: Target URL returned error (\d+): (.+)/,
+			);
+			if (errorMatch) {
+				const [, statusCode, errorMessage] = errorMatch;
+				throw new Error(`Target URL error ${statusCode}: ${errorMessage}`);
+			}
+
+			throw new Error('Target URL returned an error');
+		}
+
+		if (markdown.includes('Page not found') && markdown.length < 500) {
+			throw new Error('Page not found (404)');
+		}
+
+		if (markdown.trim().length < 100) {
+			throw new Error('Content too short - likely an error page');
+		}
+
 		const titleMatch = markdown.match(/^#\s+(.+)$/m);
 		const title = titleMatch ? titleMatch[1] : new URL(url).hostname;
 

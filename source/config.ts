@@ -2,13 +2,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-type RequiredEnvVar = 'JINA_AI_KEY' | 'SUPABASE_URL' | 'SUPABASE_ANON_KEY';
+type RequiredEnvVar =
+	| 'JINA_AI_KEY'
+	| 'SUPABASE_URL'
+	| 'SUPABASE_ANON_KEY'
+	| 'CLAUDE_API_KEY';
 
-type OptionalEnvVar =
-	| 'VOYAGE_AI_API_KEY'
-	| 'VOYAGE_AI_API_URL'
-	| 'CLAUDE_API_KEY'
-	| 'CLAUDE_API_URL';
+type OptionalEnvVar = 'VOYAGE_AI_API_KEY' | 'VOYAGE_AI_API_URL';
 
 function getRequiredEnv(key: RequiredEnvVar): string {
 	const value = process.env[key];
@@ -36,7 +36,6 @@ export const config = {
 		apiUrl: getOptionalEnv('VOYAGE_AI_API_URL'),
 	},
 	claude: {
-		apiKey: getOptionalEnv('CLAUDE_API_KEY'),
-		apiUrl: getOptionalEnv('CLAUDE_API_URL'),
+		apiKey: getRequiredEnv('CLAUDE_API_KEY'),
 	},
 } as const;

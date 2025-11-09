@@ -23,6 +23,7 @@
 		"dist"
 	],
 	"dependencies": {
+		"@anthropic-ai/sdk": "^0.68.0",
 		"@iarna/toml": "^2.2.5",
 		"@mishieck/ink-titled-box": "^0.3.0",
 		"@sindresorhus/slugify": "^3.0.0",

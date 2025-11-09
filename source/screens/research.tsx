@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
-import {Box, Text, useInput, useApp} from 'ink';
+import {Box, Text, useInput, useApp, useStdout} from 'ink';
 import TextInput from 'ink-text-input';
+import {TaskList, Task} from 'ink-task-list';
 import {type Essay} from '../db/index.js';
 import {researchTopic} from '../agents/ra.js';
 
@@ -9,24 +10,31 @@ type ResearchScreenProps = {
 	onBack: () => void;
 };
 
-type ArticleStatus = {
-	url: string;
-	title?: string;
-	status: 'pending' | 'processing' | 'archived' | 'failed';
-	error?: string;
+type ArticleTask = {
+	label: string;
+	status: 'pending' | 'loading' | 'success' | 'error';
+	output?: string;
 };
 
 export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 	const [query, setQuery] = useState('');
-	const [articles, setArticles] = useState<ArticleStatus[]>([]);
+	const [tasks, setTasks] = useState<ArticleTask[]>([]);
 	const [isResearching, setIsResearching] = useState(false);
-	const [statusMessage, setStatusMessage] = useState('');
+	const [logs, setLogs] = useState<string[]>([]);
 	const [inputFocused, setInputFocused] = useState(true);
-	const [currentProcessingIndex, setCurrentProcessingIndex] = useState(-1);
 	const {exit} = useApp();
+	const {stdout} = useStdout();
+
+	const terminalWidth = stdout?.columns ?? 80;
+	const leftWidth = Math.floor(terminalWidth * 0.6);
+	const rightWidth = Math.floor(terminalWidth * 0.4);
+
+	const addLog = (message: string) => {
+		setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
+	};
 
 	useInput(
-		(input, key) => {
+		(input, _key) => {
 			if (input === 'q') {
 				exit();
 				return;
@@ -39,8 +47,8 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 
 			if (input === 'r' && !isResearching) {
 				setQuery('');
-				setArticles([]);
-				setStatusMessage('');
+				setTasks([]);
+				setLogs([]);
 				setInputFocused(true);
 			}
 		},
@@ -54,52 +62,68 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 
 		setInputFocused(false);
 		setIsResearching(true);
-		setArticles([]);
-		setStatusMessage('Starting research...');
-		setCurrentProcessingIndex(-1);
+		setTasks([]);
+		setLogs([]);
+		addLog('Starting research...');
 
 		try {
 			await researchTopic(essay.slug, query, (progress: string) => {
-				const foundMatch = progress.match(/Found (\d+) URLs/);
-				if (foundMatch) {
-					const count = Number.parseInt(foundMatch[1], 10);
-					const newArticles: ArticleStatus[] = Array.from(
-						{length: count},
-						() => ({
-							url: '',
-							status: 'pending',
-						}),
-					);
-					setArticles(newArticles);
-					setStatusMessage(progress);
+				addLog(progress);
+
+				const foundMatch = progress.match(/Found (\d+) URLs, processing first (\d+)/);
+				if (foundMatch && foundMatch[2]) {
+					const count = Number.parseInt(foundMatch[2], 10);
+					const newTasks: ArticleTask[] = Array.from({length: count}, (_, i) => ({
+						label: `Article ${i + 1}`,
+						status: 'pending',
+					}));
+					setTasks(newTasks);
 					return;
 				}
 
-				const processingMatch = progress.match(
-					/\[(\d+)\/(\d+)\] Processing: (.+)/,
-				);
-				if (processingMatch) {
-					const index = Number.parseInt(processingMatch[1], 10) - 1;
-					const url = processingMatch[3];
-					setCurrentProcessingIndex(index);
-					setArticles(prev => {
+				const processingMatch = progress.match(/\[(\d+)\/\d+\] Processing:/);
+				if (processingMatch && processingMatch[1]) {
+					const articleNum = Number.parseInt(processingMatch[1], 10);
+					const index = articleNum - 1;
+					setTasks(prev => {
 						const updated = [...prev];
-						updated[index] = {url, status: 'processing'};
+						if (updated[index]) {
+							updated[index] = {...updated[index], status: 'loading'};
+						}
+
 						return updated;
 					});
-					setStatusMessage(`Processing article ${index + 1}...`);
 					return;
 				}
 
-				const extractedMatch = progress.match(/^\s+Extracted: (.+)/);
-				if (extractedMatch) {
-					const title = extractedMatch[1];
-					setArticles(prev => {
+				const extractedMatch = progress.match(/\[(\d+)\/\d+\] Extracted: (.+)/);
+				if (extractedMatch && extractedMatch[1] && extractedMatch[2]) {
+					const articleNum = Number.parseInt(extractedMatch[1], 10);
+					const title = extractedMatch[2];
+					const index = articleNum - 1;
+					setTasks(prev => {
 						const updated = [...prev];
-						if (currentProcessingIndex !== -1) {
-							updated[currentProcessingIndex] = {
-								...updated[currentProcessingIndex],
-								title,
+						if (updated[index]) {
+							updated[index] = {...updated[index], label: title};
+						}
+
+						return updated;
+					});
+					return;
+				}
+
+				const savedMatch = progress.match(/\[(\d+)\/\d+\] Saved: (.+)/);
+				if (savedMatch && savedMatch[1] && savedMatch[2]) {
+					const articleNum = Number.parseInt(savedMatch[1], 10);
+					const title = savedMatch[2];
+					const index = articleNum - 1;
+					setTasks(prev => {
+						const updated = [...prev];
+						if (updated[index]) {
+							updated[index] = {
+								label: title,
+								status: 'success',
+								output: 'Archived with summary and key points',
 							};
 						}
 
@@ -108,14 +132,18 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 					return;
 				}
 
-				const savedMatch = progress.match(/^\s+Saved to database/);
-				if (savedMatch) {
-					setArticles(prev => {
+				const failedMatch = progress.match(/\[(\d+)\/\d+\] Failed: (.+)/);
+				if (failedMatch && failedMatch[1] && failedMatch[2]) {
+					const articleNum = Number.parseInt(failedMatch[1], 10);
+					const errorMsg = failedMatch[2];
+					const index = articleNum - 1;
+					setTasks(prev => {
 						const updated = [...prev];
-						if (currentProcessingIndex !== -1) {
-							updated[currentProcessingIndex] = {
-								...updated[currentProcessingIndex],
-								status: 'archived',
+						if (updated[index]) {
+							updated[index] = {
+								...updated[index],
+								status: 'error',
+								output: errorMsg,
 							};
 						}
 
@@ -123,34 +151,11 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 					});
 					return;
 				}
-
-				const failedMatch = progress.match(/^\s+Failed: (.+)/);
-				if (failedMatch) {
-					const error = failedMatch[1];
-					setArticles(prev => {
-						const updated = [...prev];
-						if (currentProcessingIndex !== -1) {
-							updated[currentProcessingIndex] = {
-								...updated[currentProcessingIndex],
-								status: 'failed',
-								error,
-							};
-						}
-
-						return updated;
-					});
-					return;
-				}
-
-				if (progress.includes('Research complete')) {
-					setStatusMessage('Research complete!');
-					return;
-				}
-
-				setStatusMessage(progress);
 			});
+
+			addLog('Research complete!');
 		} catch (error) {
-			setStatusMessage(
+			addLog(
 				`Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
 			);
 		} finally {
@@ -158,96 +163,107 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 		}
 	};
 
-	const articlesArchived = articles.filter(a => a.status === 'archived').length;
-	const articlesFailed = articles.filter(a => a.status === 'failed').length;
+	const tasksSucceeded = tasks.filter(t => t.status === 'success').length;
+	const tasksFailed = tasks.filter(t => t.status === 'error').length;
+
+	const recentLogs = logs.slice(-20);
 
 	return (
 		<Box flexDirection="column" padding={1}>
-			<Box borderStyle="round" borderColor="cyan" flexDirection="column">
-				<Box paddingX={2} paddingTop={1}>
-					<Text bold color="cyan">
-						Research: {essay.title}
-					</Text>
-				</Box>
+			<Box borderStyle="round" borderColor="blue" paddingX={2} paddingY={1}>
+				<Text bold color="blue">
+					Research: {essay.title}
+				</Text>
+			</Box>
 
-				<Box paddingX={2} paddingY={1} flexDirection="column">
-					<Box marginBottom={1}>
-						<Text>Query: </Text>
-						<Box width={40}>
-							{inputFocused ? (
-								<TextInput
-									value={query}
-									onChange={setQuery}
-									onSubmit={handleSubmit}
-									placeholder="Enter research query..."
-								/>
-							) : (
-								<Text color="gray">{query}</Text>
-							)}
-						</Box>
+			<Box marginTop={1} marginBottom={1} paddingX={1}>
+				<Text color="white">Query: </Text>
+				<Box width={60} marginLeft={1}>
+					{inputFocused ? (
+						<TextInput
+							value={query}
+							onChange={setQuery}
+							onSubmit={handleSubmit}
+							placeholder="Enter research query..."
+						/>
+					) : (
+						<Text color="white">{query}</Text>
+					)}
+				</Box>
+			</Box>
+
+			<Box flexDirection="row">
+				<Box width={leftWidth} flexDirection="column" borderStyle="round" borderColor="white" marginRight={1}>
+					<Box paddingX={1} borderBottom borderColor="white">
+						<Text bold color="blue">
+							Research ({tasks.length} found, {tasksSucceeded} archived{tasksFailed > 0 ? `, ${tasksFailed} failed` : ''})
+						</Text>
 					</Box>
-
-					{articles.length > 0 && (
-						<Box flexDirection="column" marginTop={1}>
-							<Text bold>
-								Articles ({articles.length} found, {articlesArchived} archived
-								{articlesFailed > 0 ? `, ${articlesFailed} failed` : ''})
+					{tasks.length === 0 ? (
+						<Box padding={1}>
+							<Text color="white">
+								{isResearching
+									? 'Searching for articles...'
+									: 'Enter a query to start research'}
 							</Text>
-
-							<Box
-								flexDirection="column"
-								marginTop={1}
-								borderStyle="single"
-								borderColor="gray"
-								paddingX={1}
-								paddingY={1}
-								height={Math.min(articles.length + 2, 12)}
-							>
-								{articles.map((article, index) => {
-									let icon = '⏳';
-									let color: 'yellow' | 'green' | 'red' | 'gray' = 'yellow';
-
-									if (article.status === 'archived') {
-										icon = '✓';
-										color = 'green';
-									} else if (article.status === 'failed') {
-										icon = '✗';
-										color = 'red';
-									} else if (article.status === 'pending') {
-										icon = '○';
-										color = 'gray';
-									}
-
-									return (
-										<Box key={index}>
-											<Text color={color}>
-												{icon}{' '}
-												{article.title ||
-													article.url ||
-													`Article ${index + 1}`}
-												{article.error ? ` - ${article.error}` : ''}
-											</Text>
-										</Box>
-									);
-								})}
-							</Box>
 						</Box>
-					)}
-
-					{statusMessage && (
-						<Box marginTop={1}>
-							<Text color="gray">Status: {statusMessage}</Text>
+					) : (
+						<Box paddingX={1}>
+							<TaskList>
+								{tasks.map((task, index) => (
+									<Task
+										key={index}
+										label={task.label}
+										state={task.status}
+										output={task.output}
+										spinner={{
+											interval: 80,
+											frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'],
+										}}
+									/>
+								))}
+							</TaskList>
 						</Box>
 					)}
 				</Box>
 
-				<Box paddingX={2} paddingBottom={1} borderTop borderColor="gray">
-					<Text dimColor>
-						{isResearching
-							? 'Researching...'
-							: '[B] Back  [R] New Research  [Q] Quit'}
-					</Text>
+				<Box width={rightWidth} flexDirection="column" borderStyle="round" borderColor="white">
+					<Box paddingX={1} borderBottom borderColor="white">
+						<Text bold color="blue">
+							Logs
+						</Text>
+					</Box>
+					<Box
+						flexDirection="column"
+						paddingX={1}
+						paddingY={1}
+						height={Math.min(recentLogs.length + 2, 15)}
+					>
+						{recentLogs.length === 0 ? (
+							<Text color="white">No activity yet</Text>
+						) : (
+							recentLogs.map((log, index) => (
+								<Text key={index} color="white">
+									{log}
+								</Text>
+							))
+						)}
+					</Box>
 				</Box>
+			</Box>
+
+			<Box
+				marginTop={1}
+				borderStyle="round"
+				borderColor="white"
+				paddingX={2}
+				paddingY={1}
+			>
+				<Text color="white">
+					{isResearching
+						? 'Researching...'
+						: '[B] Back  [R] New Research  [Q] Quit'}
+				</Text>
 			</Box>
 		</Box>
 	);

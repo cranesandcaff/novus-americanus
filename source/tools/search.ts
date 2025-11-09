@@ -24,7 +24,8 @@ export async function searchWeb(query: string): Promise<string[]> {
 
 		while ((match = urlPattern.exec(html)) !== null) {
 			const url = match[1];
-			if (url.startsWith('http')) {
+
+			if (url && url.startsWith('http')) {
 				urls.push(url);
 			}
 
@@ -33,24 +34,9 @@ export async function searchWeb(query: string): Promise<string[]> {
 			}
 		}
 
-		if (urls.length === 0) {
-			console.warn('No URLs found, using fallback hardcoded results for testing');
-			return [
-				'https://www.propublica.org/article/police-misconduct-insurance',
-				'https://www.brookings.edu/articles/how-to-fix-the-police/',
-				'https://www.vera.org/publications/police-accountability',
-			];
-		}
-
 		return urls;
 	} catch (error) {
 		console.error('Search error:', error);
-		console.warn('Using fallback hardcoded results');
-
-		return [
-			'https://www.propublica.org/article/police-misconduct-insurance',
-			'https://www.brookings.edu/articles/how-to-fix-the-police/',
-			'https://www.vera.org/publications/police-accountability',
-		];
+		throw error;
 	}
 }

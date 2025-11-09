@@ -1,8 +1,8 @@
 essay = { }
 
 [research]
-currentQuery = "Find articles about the cost of hunger on gdp, the cost of means testing, find datasets on these things in the us, include snap and wic and other countries successful system "
-articlesFound = 3
-articlesArchived = 3
+currentQuery = "Search Killology and police training programs, length and requirements for major metros "
+articlesFound = 10
+articlesArchived = 10
 articlesFailed = 0
-lastUpdated = "2025-11-09T19:14:53.105Z"
+lastUpdated = "2025-11-09T20:21:08.650Z"
