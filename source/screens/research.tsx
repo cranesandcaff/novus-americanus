@@ -1,9 +1,13 @@
 import React, {useState} from 'react';
 import {Box, Text, useInput, useApp, useStdout} from 'ink';
 import TextInput from 'ink-text-input';
-import {TaskList, Task} from 'ink-task-list';
+
 import {type Essay} from '../db/index.js';
 import {researchTopic} from '../agents/ra.js';
+import {createOutline} from '../agents/oa.js';
+import Table from '../components/Table.js';
+import {SourcesListScreen} from './sources-list.js';
+
 
 type ResearchScreenProps = {
 	essay: Essay;
@@ -20,39 +24,65 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 	const [query, setQuery] = useState('');
 	const [tasks, setTasks] = useState<ArticleTask[]>([]);
 	const [isResearching, setIsResearching] = useState(false);
+	const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
 	const [logs, setLogs] = useState<string[]>([]);
 	const [inputFocused, setInputFocused] = useState(true);
+	const [cancelRequested, setCancelRequested] = useState(false);
+	const [showSourcesList, setShowSourcesList] = useState(false);
 	const {exit} = useApp();
 	const {stdout} = useStdout();
 
 	const terminalWidth = stdout?.columns ?? 80;
-	const leftWidth = Math.floor(terminalWidth * 0.6);
-	const rightWidth = Math.floor(terminalWidth * 0.4);
+	const leftWidth = Math.floor(terminalWidth * 0.75);
+	const rightWidth = Math.floor(terminalWidth * 0.25);
 
 	const addLog = (message: string) => {
 		setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
 	};
 
 	useInput(
-		(input, _key) => {
+		(input, key) => {
 			if (input === 'q') {
 				exit();
 				return;
 			}
 
-			if (input === 'b' && !isResearching) {
+			if (key.escape && isResearching) {
+				addLog('Cancellation requested...');
+				setCancelRequested(true);
+				return;
+			}
+
+			if (input === 'b' && !isResearching && !isGeneratingOutline) {
 				onBack();
 				return;
 			}
 
-			if (input === 'r' && !isResearching) {
+			if (input === 'r' && !isResearching && !isGeneratingOutline) {
 				setQuery('');
 				setTasks([]);
 				setLogs([]);
 				setInputFocused(true);
 			}
+
+			if (input === 'o' && !isResearching && !isGeneratingOutline) {
+				handleGenerateOutline();
+			}
+
+			if (input === 'l' && !isResearching && !isGeneratingOutline) {
+				setShowSourcesList(true);
+			}
 		},
 		{isActive: !inputFocused},
+	);
+
+	useInput(
+		(_input, key) => {
+			if (key.escape && !isResearching && !isGeneratingOutline) {
+				setInputFocused(false);
+			}
+		},
+		{isActive: inputFocused},
 	);
 
 	const handleSubmit = async () => {
@@ -62,17 +92,23 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 
 		setInputFocused(false);
 		setIsResearching(true);
+		setCancelRequested(false);
 		setTasks([]);
 		setLogs([]);
 		addLog('Starting research...');
 
 		try {
-			await researchTopic(essay.slug, query, (progress: string) => {
-				addLog(progress);
+			await researchTopic(
+				essay.slug,
+				query,
+				(progress: string) => {
+					if (!progress.includes('TaskUpdate:')) {
+						addLog(progress);
+					}
 
-				const foundMatch = progress.match(/Found (\d+) URLs, processing first (\d+)/);
-				if (foundMatch && foundMatch[2]) {
-					const count = Number.parseInt(foundMatch[2], 10);
+				const foundMatch = progress.match(/Processing (\d+) new articles/);
+				if (foundMatch && foundMatch[1]) {
+					const count = Number.parseInt(foundMatch[1], 10);
 					const newTasks: ArticleTask[] = Array.from({length: count}, (_, i) => ({
 						label: `Article ${i + 1}`,
 						status: 'pending',
@@ -112,18 +148,24 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 					return;
 				}
 
-				const savedMatch = progress.match(/\[(\d+)\/\d+\] Saved: (.+)/);
-				if (savedMatch && savedMatch[1] && savedMatch[2]) {
-					const articleNum = Number.parseInt(savedMatch[1], 10);
-					const title = savedMatch[2];
+				const taskUpdateMatch = progress.match(/\[(\d+)\/\d+\] TaskUpdate: (.+)/);
+				if (taskUpdateMatch && taskUpdateMatch[1] && taskUpdateMatch[2]) {
+					const articleNum = Number.parseInt(taskUpdateMatch[1], 10);
+					const parts = taskUpdateMatch[2].split('|||');
+					const url = parts[0] || 'Unknown URL';
+					const summary = parts[1] || '';
 					const index = articleNum - 1;
+
+					const firstSentence = summary.split('.')[0] + '.';
+					const output = summary ? firstSentence : 'Archived';
+
 					setTasks(prev => {
 						const updated = [...prev];
 						if (updated[index]) {
 							updated[index] = {
-								label: title,
+								label: url,
 								status: 'success',
-								output: 'Archived with summary and key points',
+								output,
 							};
 						}
 
@@ -151,9 +193,15 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 					});
 					return;
 				}
-			});
+			},
+			() => cancelRequested,
+		);
 
-			addLog('Research complete!');
+			if (cancelRequested) {
+				addLog('Research cancelled by user');
+			} else {
+				addLog('Research complete!');
+			}
 		} catch (error) {
 			addLog(
 				`Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -163,10 +211,65 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 		}
 	};
 
+	const handleGenerateOutline = async () => {
+		setIsGeneratingOutline(true);
+		addLog('Starting outline generation...');
+
+		try {
+			await createOutline(essay.slug, (progress: string) => {
+				addLog(progress);
+			});
+
+			addLog('Outline generation complete!');
+		} catch (error) {
+			addLog(
+				`Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+			);
+		} finally {
+			setIsGeneratingOutline(false);
+		}
+	};
+
 	const tasksSucceeded = tasks.filter(t => t.status === 'success').length;
 	const tasksFailed = tasks.filter(t => t.status === 'error').length;
 
 	const recentLogs = logs.slice(-20);
+
+	const truncate = (str: string, maxLength: number) => {
+		if (str.length <= maxLength) {
+			return str;
+		}
+
+		return str.substring(0, maxLength - 3) + '...';
+	};
+
+	const getStatusIcon = (status: string) => {
+		switch (status) {
+			case 'success':
+				return '✓';
+			case 'error':
+				return '✗';
+			case 'loading':
+				return '⋯';
+			default:
+				return '○';
+		}
+	};
+
+	const tableData = tasks.map(task => ({
+		status: getStatusIcon(task.status),
+		url: truncate(task.label, 50),
+		summary: task.output ? truncate(task.output, 40) : '',
+	}));
+
+	if (showSourcesList) {
+		return (
+			<SourcesListScreen
+				essay={essay}
+				onBack={() => setShowSourcesList(false)}
+			/>
+		);
+	}
 
 	return (
 		<Box flexDirection="column" padding={1}>
@@ -193,7 +296,7 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 			</Box>
 
 			<Box flexDirection="row">
-				<Box width={leftWidth} flexDirection="column" borderStyle="round" borderColor="white" marginRight={1}>
+				<Box width={leftWidth} flexDirection="column" marginRight={1}>
 					<Box paddingX={1} borderBottom borderColor="white">
 						<Text bold color="blue">
 							Research ({tasks.length} found, {tasksSucceeded} archived{tasksFailed > 0 ? `, ${tasksFailed} failed` : ''})
@@ -209,25 +312,12 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 						</Box>
 					) : (
 						<Box paddingX={1}>
-							<TaskList>
-								{tasks.map((task, index) => (
-									<Task
-										key={index}
-										label={task.label}
-										state={task.status}
-										output={task.output}
-										spinner={{
-											interval: 80,
-											frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'],
-										}}
-									/>
-								))}
-							</TaskList>
+							<Table data={tableData} />
 						</Box>
 					)}
 				</Box>
 
-				<Box width={rightWidth} flexDirection="column" borderStyle="round" borderColor="white">
+				<Box width={rightWidth} flexDirection="column">
 					<Box paddingX={1} borderBottom borderColor="white">
 						<Text bold color="blue">
 							Logs
@@ -243,7 +333,7 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 							<Text color="white">No activity yet</Text>
 						) : (
 							recentLogs.map((log, index) => (
-								<Text key={index} color="white">
+								<Text key={index} color="white" wrap="wrap">
 									{log}
 								</Text>
 							))
@@ -261,8 +351,12 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 			>
 				<Text color="white">
 					{isResearching
-						? 'Researching...'
-						: '[B] Back  [R] New Research  [Q] Quit'}
+						? '[ESC] Cancel  [Q] Quit'
+						: isGeneratingOutline
+							? 'Generating outline...  [Q] Quit'
+							: inputFocused
+								? '[ESC] Unfocus to access menu options  [Q] Quit'
+								: '[B] Back  [R] New Research  [L] List Sources  [O] Sync Outline  [Q] Quit'}
 				</Text>
 			</Box>
 		</Box>

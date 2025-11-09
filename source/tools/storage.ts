@@ -18,6 +18,7 @@ export async function saveResearchArticle(
 	article: Article,
 	summary?: string,
 	keyPoints?: string[],
+	searchQuery?: string,
 ): Promise<void> {
 	const source = await sources.create({
 		title: article.title,
@@ -26,6 +27,7 @@ export async function saveResearchArticle(
 		date_accessed: new Date(),
 		summary,
 		key_points: keyPoints ? JSON.stringify(keyPoints) : undefined,
+		search_query: searchQuery,
 	});
 
 	await essaySources.link(essayId, source.id);
@@ -72,4 +74,27 @@ export async function getResearchSummaries(
 		summary: source.summary,
 		keyPoints: source.key_points ? JSON.parse(source.key_points) : null,
 	}));
+}
+
+export async function getExistingUrls(essayId: string): Promise<Set<string>> {
+	const sourcesData = await essays.getSources(essayId);
+	const urls = sourcesData
+		.map(source => source.url)
+		.filter((url): url is string => url !== null);
+	return new Set(urls);
+}
+
+export async function linkExistingSource(
+	essayId: string,
+	url: string,
+): Promise<boolean> {
+	const sourcesData = await sources.getAll();
+	const existingSource = sourcesData.find(s => s.url === url);
+
+	if (existingSource) {
+		await essaySources.link(essayId, existingSource.id);
+		return true;
+	}
+
+	return false;
 }

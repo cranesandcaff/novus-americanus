@@ -19,3 +19,14 @@ We need better concurrency management so we can search more than 10 articles and
 
 
 Search Killology and police training programs, length and requirements for major metros
+
+We should check the database after we search for links before we send to jina and to claude. We want to prevent burning tokens and requests summarizing the same article twice and different search queries may have output overlap.
+
+Let's update our UI to add another action, [O] Sync Outline
+
+It would trigger Oa on the current topic and then either create or update the outline based on the available research in our knowledge base
+
+
+We should store the search query that triggered the search and summarization of an article so we can vet if its a good result or not.
+
+Fix the task list color of the text that I've highlighted and only show the summary not the key points. And only the url in the logs

@@ -65,7 +65,7 @@ Return your response as JSON in this exact format:
   "totalWords": 5000,
   "sections": [
     {
-      "number": 2,
+      "number": 1,
       "title": "Introduction",
       "keyPoints": [
         "Hook with compelling statistic or story",
@@ -75,7 +75,7 @@ Return your response as JSON in this exact format:
       "targetWords": 500
     },
     {
-      "number": 3,
+      "number": 2,
       "title": "Background",
       "keyPoints": [
         "Point 1",
@@ -87,7 +87,7 @@ Return your response as JSON in this exact format:
 }
 
 IMPORTANT:
-- Number sections starting from 2 (0 is outline.md, 1 is meta.md)
+- Number sections starting from 1
 - Make section titles descriptive and specific
 - Ensure key points are actionable for writing
 - Word counts should add up to approximately the total`;
