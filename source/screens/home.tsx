@@ -5,6 +5,7 @@ import {essays, type Essay} from '../db/index.js';
 type HomeScreenProps = {
 	onOpenEssay: (essay: Essay) => void;
 	onNewEssay: () => void;
+	onMigrate: () => void;
 };
 
 function formatRelativeTime(date: Date): string {
@@ -43,7 +44,11 @@ function truncate(str: string, maxLength: number): string {
 	return str.slice(0, maxLength - 3) + '...';
 }
 
-export function HomeScreen({onOpenEssay, onNewEssay}: HomeScreenProps) {
+export function HomeScreen({
+	onOpenEssay,
+	onNewEssay,
+	onMigrate,
+}: HomeScreenProps) {
 	const [essayList, setEssayList] = useState<Essay[]>([]);
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const [isLoading, setIsLoading] = useState(true);
@@ -80,8 +85,17 @@ export function HomeScreen({onOpenEssay, onNewEssay}: HomeScreenProps) {
 			return;
 		}
 
+		if (input === 'm') {
+			onMigrate();
+			return;
+		}
+
 		if (key.return && essayList.length > 0) {
-			onOpenEssay(essayList[selectedIndex]);
+			const selectedEssay = essayList[selectedIndex];
+			if (selectedEssay) {
+				onOpenEssay(selectedEssay);
+			}
+
 			return;
 		}
 
@@ -185,7 +199,7 @@ export function HomeScreen({onOpenEssay, onNewEssay}: HomeScreenProps) {
 
 				<Box paddingX={2} paddingBottom={1} borderTop borderColor="white">
 					<Text color="white">
-						[N] New Essay [Enter] Open {essayList.length > 0 ? '' : ''}[Q] Quit
+						[N] New Essay [M] Migrate Embeddings [Enter] Open [Q] Quit
 					</Text>
 				</Box>
 			</Box>

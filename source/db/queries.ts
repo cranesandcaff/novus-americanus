@@ -1,4 +1,4 @@
-import {supabase, type Essay, type Source} from './client.js';
+import {supabase, type Essay, type Source, type SourceChunk} from './client.js';
 
 export const essays = {
 	async getAll(): Promise<Essay[]> {
@@ -105,6 +105,19 @@ export const sources = {
 		const {data, error} = await supabase
 			.from('sources')
 			.select('*')
+			.order('created_at', {ascending: false});
+
+		if (error) {
+			throw error;
+		}
+
+		return data ?? [];
+	},
+
+	async getAllMinimal(): Promise<Array<{id: string; title: string}>> {
+		const {data, error} = await supabase
+			.from('sources')
+			.select('id, title')
 			.order('created_at', {ascending: false});
 
 		if (error) {
@@ -231,5 +244,57 @@ export const essaySources = {
 		if (error) {
 			throw error;
 		}
+	},
+};
+
+export const sourceChunks = {
+	async getBySourceId(sourceId: string): Promise<SourceChunk[]> {
+		const {data, error} = await supabase
+			.from('source_chunks')
+			.select('*')
+			.eq('source_id', sourceId)
+			.order('chunk_index', {ascending: true});
+
+		if (error) {
+			throw error;
+		}
+
+		return data ?? [];
+	},
+
+	async deleteBySourceId(sourceId: string): Promise<void> {
+		const {error} = await supabase
+			.from('source_chunks')
+			.delete()
+			.eq('source_id', sourceId);
+
+		if (error) {
+			throw error;
+		}
+	},
+
+	async count(): Promise<number> {
+		const {count, error} = await supabase
+			.from('source_chunks')
+			.select('*', {count: 'exact', head: true});
+
+		if (error) {
+			throw error;
+		}
+
+		return count ?? 0;
+	},
+
+	async hasEmbeddings(sourceId: string): Promise<boolean> {
+		const {count, error} = await supabase
+			.from('source_chunks')
+			.select('*', {count: 'exact', head: true})
+			.eq('source_id', sourceId);
+
+		if (error) {
+			throw error;
+		}
+
+		return (count ?? 0) > 0;
 	},
 };

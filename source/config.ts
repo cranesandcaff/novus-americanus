@@ -40,8 +40,8 @@ export const config = {
 	},
 	research: {
 		maxArticles: Number.parseInt(process.env.MAX_ARTICLES ?? '20', 10),
-		concurrency: Number.parseInt(process.env.CONCURRENCY ?? '2', 10),
-		batchDelayMs: Number.parseInt(process.env.BATCH_DELAY_MS ?? '12000', 10),
+		concurrency: Number.parseInt(process.env.CONCURRENCY ?? '8', 10),
+		batchDelayMs: Number.parseInt(process.env.BATCH_DELAY_MS ?? '25000', 10),
 		maxRetries: Number.parseInt(process.env.MAX_RETRIES ?? '3', 10),
 	},
 } as const;

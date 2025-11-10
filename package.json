@@ -11,7 +11,9 @@
 		"build": "tsc",
 		"dev": "tsc --watch",
 		"start": "node dist/cli.js",
+		"start:large": "node --max-old-space-size=4096 --expose-gc dist/cli.js",
 		"dev:run": "tsx source/cli.tsx",
+		"dev:run:large": "node --max-old-space-size=4096 --expose-gc -r tsx/cjs source/cli.tsx",
 		"test": "prettier --check . && xo && ava",
 		"db:migrate": "supabase db push",
 		"db:reset": "supabase db reset",
@@ -43,7 +45,8 @@
 		"object-hash": "^3.0.0",
 		"p-limit": "^7.2.0",
 		"postgres": "^3.4.7",
-		"react": "^19.0.0"
+		"react": "^19.0.0",
+		"voyageai": "^0.0.8"
 	},
 	"devDependencies": {
 		"@sindresorhus/tsconfig": "^3.0.1",

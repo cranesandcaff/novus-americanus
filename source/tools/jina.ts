@@ -6,14 +6,34 @@ export type Article = {
 	url: string;
 };
 
+type JinaResponse = {
+	code: number;
+	status: number;
+	data: {
+		title: string;
+		description: string;
+		url: string;
+		content: string;
+		publishedTime?: string;
+		metadata?: {
+			lang?: string;
+			viewport?: string;
+		};
+		warning?: string;
+		usage?: {
+			tokens: number;
+		};
+	};
+};
+
 export async function extractArticle(url: string): Promise<Article> {
 	const jinaUrl = `https://r.jina.ai/${url}`;
 
 	try {
 		const response = await fetch(jinaUrl, {
 			headers: {
+				Accept: 'application/json',
 				Authorization: `Bearer ${config.jina.apiKey}`,
-				'X-Return-Format': 'markdown',
 			},
 		});
 
@@ -23,35 +43,24 @@ export async function extractArticle(url: string): Promise<Article> {
 			);
 		}
 
-		const markdown = await response.text();
+		const jsonResponse: JinaResponse = await response.json();
 
-		if (markdown.includes('Warning: Target URL returned error')) {
-			const errorMatch = markdown.match(
-				/Warning: Target URL returned error (\d+): (.+)/,
+		if (jsonResponse.code !== 200) {
+			throw new Error(
+				`Jina API returned error code: ${jsonResponse.code} (status: ${jsonResponse.status})`,
 			);
-			if (errorMatch) {
-				const [, statusCode, errorMessage] = errorMatch;
-				throw new Error(`Target URL error ${statusCode}: ${errorMessage}`);
-			}
-
-			throw new Error('Target URL returned an error');
 		}
 
-		if (markdown.includes('Page not found') && markdown.length < 500) {
-			throw new Error('Page not found (404)');
-		}
+		const {data} = jsonResponse;
 
-		if (markdown.trim().length < 100) {
+		if (!data.content || data.content.trim().length < 100) {
 			throw new Error('Content too short - likely an error page');
 		}
 
-		const titleMatch = markdown.match(/^#\s+(.+)$/m);
-		const title = titleMatch ? titleMatch[1] : new URL(url).hostname;
-
 		return {
-			title,
-			content: markdown,
-			url,
+			title: data.title || new URL(url).hostname,
+			content: data.content,
+			url: data.url,
 		};
 	} catch (error) {
 		console.error(`Failed to extract article from ${url}:`, error);

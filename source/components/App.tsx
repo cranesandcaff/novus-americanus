@@ -6,8 +6,9 @@ import {type Essay} from '../db/index.js';
 import {createEssay} from '../tools/storage.js';
 import {HomeScreen} from '../screens/home.js';
 import {ResearchScreen} from '../screens/research.js';
+import {MigrateScreen} from '../screens/migrate.js';
 
-type Screen = 'home' | 'research' | 'new-essay';
+type Screen = 'home' | 'research' | 'new-essay' | 'migrate';
 
 type NewEssayScreenProps = {
 	newEssayTitle: string;
@@ -122,10 +123,22 @@ export default function App() {
 		setCurrentScreen('home');
 	};
 
+	const handleMigrateEmbeddings = () => {
+		setCurrentScreen('migrate');
+	};
+
 	if (currentScreen === 'home') {
 		return (
-			<HomeScreen onOpenEssay={handleOpenEssay} onNewEssay={handleNewEssay} />
+			<HomeScreen
+				onOpenEssay={handleOpenEssay}
+				onNewEssay={handleNewEssay}
+				onMigrate={handleMigrateEmbeddings}
+			/>
 		);
+	}
+
+	if (currentScreen === 'migrate') {
+		return <MigrateScreen onBack={handleBackToHome} />;
 	}
 
 	if (currentScreen === 'new-essay') {

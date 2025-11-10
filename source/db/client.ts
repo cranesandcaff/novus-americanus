@@ -35,3 +35,18 @@ export type EssaySource = {
 	source_id: string;
 	created_at: Date;
 };
+
+export type SourceChunk = {
+	id: string;
+	source_id: string;
+	content: string;
+	chunk_index: number;
+	token_count: number;
+	start_char_offset: number | null;
+	end_char_offset: number | null;
+	heading_context: string | null;
+	metadata: Record<string, unknown> | null;
+	embedding: number[];
+	created_at: Date;
+	updated_at: Date;
+};
