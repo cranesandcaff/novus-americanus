@@ -7,6 +7,8 @@ import {researchTopic} from '../agents/ra.js';
 import {createOutline} from '../agents/oa.js';
 import Table from '../components/Table.js';
 import {SourcesListScreen} from './sources-list.js';
+import {JournalistScreen} from './journalist.js';
+import {EditorScreen} from './editor.js';
 
 
 type ResearchScreenProps = {
@@ -29,6 +31,8 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 	const [inputFocused, setInputFocused] = useState(true);
 	const [cancelRequested, setCancelRequested] = useState(false);
 	const [showSourcesList, setShowSourcesList] = useState(false);
+	const [showJournalistScreen, setShowJournalistScreen] = useState(false);
+	const [showEditorScreen, setShowEditorScreen] = useState(false);
 	const {exit} = useApp();
 	const {stdout} = useStdout();
 
@@ -71,6 +75,14 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 
 			if (input === 'l' && !isResearching && !isGeneratingOutline) {
 				setShowSourcesList(true);
+			}
+
+			if (input === 'j' && !isResearching && !isGeneratingOutline) {
+				setShowJournalistScreen(true);
+			}
+
+			if (input === 'e' && !isResearching && !isGeneratingOutline) {
+				setShowEditorScreen(true);
 			}
 		},
 		{isActive: !inputFocused},
@@ -271,6 +283,21 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 		);
 	}
 
+	if (showJournalistScreen) {
+		return (
+			<JournalistScreen
+				essay={essay}
+				onBack={() => setShowJournalistScreen(false)}
+			/>
+		);
+	}
+
+	if (showEditorScreen) {
+		return (
+			<EditorScreen essay={essay} onBack={() => setShowEditorScreen(false)} />
+		);
+	}
+
 	return (
 		<Box flexDirection="column" padding={1}>
 			<Box borderStyle="round" borderColor="blue" paddingX={2} paddingY={1}>
@@ -356,7 +383,7 @@ export function ResearchScreen({essay, onBack}: ResearchScreenProps) {
 							? 'Generating outline...  [Q] Quit'
 							: inputFocused
 								? '[ESC] Unfocus to access menu options  [Q] Quit'
-								: '[B] Back  [R] New Research  [L] List Sources  [O] Sync Outline  [Q] Quit'}
+								: '[B] Back  [R] New  [L] List  [J] Write  [E] Edit  [O] Outline  [Q] Quit'}
 				</Text>
 			</Box>
 		</Box>
