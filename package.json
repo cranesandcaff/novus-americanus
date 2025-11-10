@@ -30,6 +30,7 @@
 		"@mishieck/ink-titled-box": "^0.3.0",
 		"@sindresorhus/slugify": "^3.0.0",
 		"@supabase/supabase-js": "^2.80.0",
+		"compromise": "^14.14.4",
 		"dotenv": "^17.2.3",
 		"drizzle-orm": "^0.44.7",
 		"ink": "^6.4.0",
@@ -46,6 +47,10 @@
 		"p-limit": "^7.2.0",
 		"postgres": "^3.4.7",
 		"react": "^19.0.0",
+		"retext": "^9.0.0",
+		"retext-equality": "^7.1.0",
+		"text-readability": "^1.1.1",
+		"unified": "^11.0.5",
 		"voyageai": "^0.0.8"
 	},
 	"devDependencies": {

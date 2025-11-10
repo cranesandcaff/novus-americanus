@@ -25,10 +25,8 @@ CREATE TABLE IF NOT EXISTS public.source_chunks (
 );
 
 -- Create indexes for performance
-CREATE INDEX idx_source_chunks_source_id ON public.source_chunks(source_id);
-
-CREATE INDEX idx_source_chunks_token_count ON public.source_chunks(token_count);
-
+-- CREATE INDEX IF NOT EXISTS idx_source_chunks_source_id ON public.source_chunks(source_id);
+-- CREATE INDEX IF NOT EXISTS idx_source_chunks_token_count ON public.source_chunks(token_count);
 -- Create HNSW index for vector similarity search
 -- Note: This will be created after populating the table for best performance
 -- Uncomment when ready to enable vector search:
@@ -39,8 +37,7 @@ ALTER TABLE
 	public.source_chunks ENABLE ROW LEVEL SECURITY;
 
 -- Create policy for authenticated users
-CREATE POLICY "Allow all operations for authenticated users on source_chunks" ON public.source_chunks FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
+-- CREATE POLICY "Allow all operations for authenticated users on source_chunks" ON public.source_chunks FOR ALL TO authenticated USING (true) WITH CHECK (true);
 -- Add updated_at trigger
 CREATE TRIGGER handle_source_chunks_updated_at BEFORE
 UPDATE
