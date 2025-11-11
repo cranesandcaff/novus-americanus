@@ -1,90 +1,92 @@
 {
-	"name": "novus-americanus",
-	"version": "0.0.0",
-	"license": "MIT",
-	"bin": "dist/cli.js",
-	"type": "module",
-	"engines": {
-		"node": ">=16"
-	},
-	"scripts": {
-		"build": "tsc",
-		"dev": "tsc --watch",
-		"start": "node dist/cli.js",
-		"start:large": "node --max-old-space-size=4096 --expose-gc dist/cli.js",
-		"dev:run": "tsx source/cli.tsx",
-		"dev:run:large": "node --max-old-space-size=4096 --expose-gc -r tsx/cjs source/cli.tsx",
-		"test": "prettier --check . && xo && ava",
-		"db:migrate": "supabase db push",
-		"db:reset": "supabase db reset",
-		"db:diff": "supabase db diff",
-		"db:start": "supabase start",
-		"db:stop": "supabase stop"
-	},
-	"files": [
-		"dist"
-	],
-	"dependencies": {
-		"@anthropic-ai/sdk": "^0.68.0",
-		"@iarna/toml": "^2.2.5",
-		"@mishieck/ink-titled-box": "^0.3.0",
-		"@sindresorhus/slugify": "^3.0.0",
-		"@supabase/supabase-js": "^2.80.0",
-		"compromise": "^14.14.4",
-		"dotenv": "^17.2.3",
-		"drizzle-orm": "^0.44.7",
-		"ink": "^6.4.0",
-		"ink-markdown": "^1.0.4",
-		"ink-select-input": "^6.2.0",
-		"ink-spinner": "^5.0.0",
-		"ink-table": "^3.1.0",
-		"ink-task-list": "^2.0.0",
-		"ink-text-input": "^6.0.0",
-		"js-toml": "^1.0.2",
-		"meow": "^11.0.0",
-		"npm": "^11.6.2",
-		"object-hash": "^3.0.0",
-		"p-limit": "^7.2.0",
-		"postgres": "^3.4.7",
-		"react": "^19.0.0",
-		"retext": "^9.0.0",
-		"retext-equality": "^7.1.0",
-		"text-readability": "^1.1.1",
-		"unified": "^11.0.5",
-		"voyageai": "^0.0.8"
-	},
-	"devDependencies": {
-		"@sindresorhus/tsconfig": "^3.0.1",
-		"@types/react": "^19.0.0",
-		"@vdemedes/prettier-config": "^2.0.1",
-		"ava": "^5.2.0",
-		"chalk": "^5.2.0",
-		"drizzle-kit": "^0.31.6",
-		"eslint-config-xo-react": "^0.27.0",
-		"eslint-plugin-react": "^7.32.2",
-		"eslint-plugin-react-hooks": "^4.6.0",
-		"ink-testing-library": "^3.0.0",
-		"prettier": "^2.8.7",
-		"ts-node": "^10.9.1",
-		"tsx": "^4.20.6",
-		"typescript": "^5.0.3",
-		"xo": "^0.53.1"
-	},
-	"ava": {
-		"extensions": {
-			"ts": "module",
-			"tsx": "module"
-		},
-		"nodeArguments": [
-			"--loader=ts-node/esm"
-		]
-	},
-	"xo": {
-		"extends": "xo-react",
-		"prettier": true,
-		"rules": {
-			"react/prop-types": "off"
-		}
-	},
-	"prettier": "@vdemedes/prettier-config"
+  "name": "novus-americanus",
+  "version": "0.0.0",
+  "license": "MIT",
+  "bin": "dist/cli.js",
+  "type": "module",
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/cli.js",
+    "start:large": "node --max-old-space-size=4096 --expose-gc dist/cli.js",
+    "dev:run": "tsx source/cli.tsx",
+    "dev:run:large": "node --max-old-space-size=4096 --expose-gc -r tsx/cjs source/cli.tsx",
+    "test": "prettier --check . && xo && ava",
+    "db:migrate": "supabase db push",
+    "db:reset": "supabase db reset",
+    "db:diff": "supabase db diff",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
+    "@iarna/toml": "^2.2.5",
+    "@mishieck/ink-titled-box": "^0.3.0",
+    "@sindresorhus/slugify": "^3.0.0",
+    "@supabase/supabase-js": "^2.80.0",
+    "compromise": "^14.14.4",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.44.7",
+    "ink": "^6.4.0",
+    "ink-markdown": "^1.0.4",
+    "ink-select-input": "^6.2.0",
+    "ink-spinner": "^5.0.0",
+    "ink-table": "^3.1.0",
+    "ink-task-list": "^2.0.0",
+    "ink-text-input": "^6.0.0",
+    "js-toml": "^1.0.2",
+    "meow": "^11.0.0",
+    "npm": "^11.6.2",
+    "object-hash": "^3.0.0",
+    "p-limit": "^7.2.0",
+    "postgres": "^3.4.7",
+    "react": "^19.0.0",
+    "retext": "^9.0.0",
+    "retext-equality": "^7.1.0",
+    "text-readability": "^1.1.1",
+    "unified": "^11.0.5",
+    "voyageai": "^0.0.8"
+  },
+  "devDependencies": {
+    "@sindresorhus/tsconfig": "^3.0.1",
+    "@types/react": "^19.0.0",
+    "@vdemedes/prettier-config": "^2.0.1",
+    "ava": "^5.2.0",
+    "chalk": "^5.2.0",
+    "drizzle-kit": "^0.31.6",
+    "eslint-config-xo-react": "^0.27.0",
+    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "ink-testing-library": "^3.0.0",
+    "prettier": "^2.8.7",
+    "ts-node": "^10.9.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.0.3",
+    "xo": "^0.53.1",
+    "nx": "22.0.3"
+  },
+  "ava": {
+    "extensions": {
+      "ts": "module",
+      "tsx": "module"
+    },
+    "nodeArguments": [
+      "--loader=ts-node/esm"
+    ]
+  },
+  "xo": {
+    "extends": "xo-react",
+    "prettier": true,
+    "rules": {
+      "react/prop-types": "off"
+    }
+  },
+  "prettier": "@vdemedes/prettier-config",
+  "nx": {}
 }
